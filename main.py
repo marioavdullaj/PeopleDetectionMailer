@@ -56,6 +56,9 @@ while(True):
 
         if(peopleDetected):
             if((end_time-last_time_detected).total_seconds() > mailing_time):
+                if not os.path.exists("./Images"):
+                    os.makedirs("./Images")
+                    
                 image_path = f"./Images/image_{uuid.uuid4()}.jpg"
                 cv2.imwrite(image_path, frame)
 
