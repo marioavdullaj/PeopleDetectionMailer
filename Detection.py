@@ -79,16 +79,16 @@ class DetectorTransformer:
         outputs = self.model(**inputs)
 
         target_sizes = torch.tensor([image.size[::-1]])
-        results = self.processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=0.9)[0]
+        results = self.processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=self.threshold)[0]
 
         for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
             box = [round(i, 2) for i in box.tolist()]
             label = self.model.config.id2label[label.item()]
-            print(f"Detected {label} with confidence {round(score.item(), 3)} at location {box}")
-            draw=D.Draw(image)
-            draw.rectangle([(box[0],box[1]),(box[2],box[3])],outline="red",width=2)
-            draw.text((box[0], box[1]-10), label, fill ="red")
             if(label == "person"):
                 peopleDetected = True
+                print(f"Detected {label} with confidence {round(score.item(), 3)} at location {box}")
+                draw=D.Draw(image)
+                draw.rectangle([(box[0],box[1]),(box[2],box[3])],outline="red",width=2)
+                draw.text((box[0], box[1]-10), label, fill ="red")
 
         return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR), peopleDetected

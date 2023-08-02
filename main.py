@@ -33,6 +33,7 @@ mailer = Mailer(email_address, app_password, email_address, email_receivers)
 
 # Camera stream capture via opencv
 camera_path = os.getenv('CAMERA_PATH')
+show_camera_preview = os.getenv('SHOW_CAMERA_PREVIEW') == "1"
 
 if str.isnumeric(camera_path):
     vid = cv2.VideoCapture(int(camera_path))
@@ -47,11 +48,13 @@ while(True):
         image = cv2.resize(frame, (800,600))
 
     if (end_time-start_time).total_seconds() > sampling_time:
-        image, peopleDetected = dnn.processFrame(image)
-        cv2.imshow("preview", image)
         start_time = end_time
 
-        if peopleDetected:
+        image, peopleDetected = dnn.processFrame(image)
+        if(show_camera_preview):
+            cv2.imshow("preview", image)
+
+        if(peopleDetected):
             if((end_time-last_time_detected).total_seconds() > mailing_time):
                 image_path = f"./Images/image_{uuid.uuid4()}.jpg"
                 cv2.imwrite(image_path, frame)
