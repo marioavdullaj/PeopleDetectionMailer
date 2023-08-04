@@ -95,7 +95,7 @@ class DetectorTransformer:
             label = self.model.config.id2label[label.item()]
             if(label == "person"):
                 peopleDetected = True
-                print(f"Detected {label} with confidence {round(score.item(), 3)} at location {box}")
+                #print(f"Detected {label} with confidence {round(score.item(), 3)} at location {box}")
                 draw=D.Draw(image)
                 draw.rectangle([(box[0],box[1]),(box[2],box[3])],outline="red",width=2)
                 draw.text((box[0], box[1]-10), label, fill ="red")
@@ -129,10 +129,10 @@ class YOLO:
             box = [round(i, 2) for i in box]
             if(label == "person"):
                 peopleDetected = True
-                print(f"Detected {label} with confidence {round(score.item(), 3)} at location {box}")
+                #print(f"Detected {label} with confidence {round(score.item(), 3)} at location {box}")
                 draw=D.Draw(image)
                 draw.rectangle([(box[0],box[1]),(box[2],box[3])],outline="red",width=2)
                 draw.text((box[0], box[1]-10), label, fill ="red")
         
-        return cv2.cvtColor(cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR), cv2.COLOR_BGR2RGB), peopleDetected
+        return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR), peopleDetected
 
