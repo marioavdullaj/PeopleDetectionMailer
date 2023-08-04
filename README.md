@@ -5,6 +5,7 @@ This app uses people detection deep neural network models over a stream of image
 Currently it uses the following object detection models:
 - MobileNet SSD
 - DETR: Detection Transformer
+- YOLOv5
 
 ## Installing / Getting started
 

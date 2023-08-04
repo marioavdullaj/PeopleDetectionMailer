@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw as D
 import cv2
 import numpy as np
 import datetime
-from Detection import DetectorTransformer, MobileSSDDetector
+from Detection import DetectorTransformer, MobileSSDDetector, YOLO
 from Mailer import Mailer
 import uuid
 import os
@@ -22,8 +22,6 @@ def initializeCamera(camera_path):
 # Global variables
 start_time = datetime.datetime.now()
 last_time_detected = datetime.datetime(2023,1,1)
-sampling_time = 5
-mailing_time = 30
 
 # Environment variables
 print("Loading environment parameters....")
@@ -32,15 +30,15 @@ camera_path = os.getenv('CAMERA_PATH')
 email_address = os.getenv("EMAIL_ACCOUNT")
 app_password = os.getenv("EMAIL_PASSWORD")
 email_receivers = [element.strip() for element in os.getenv("EMAIL_RECEIVERS").strip('[]').split(',')]
+sampling_time = float(os.getenv('SAMPLING_TIME'))
+mailing_time = int(os.getenv('MAILING_TIME'))
 print("DONE!")
 
-# MobileSSD model
-#mobile_ssd_model_path = os.getenv('MOBILE_SSD_MODEL_PATH')
-#dnn = MobileSSDDetector(path_to_ckpt=mobile_ssd_model_path)
-
 print("Loading detection model....")
-# Transformer model
-dnn = DetectorTransformer()
+# Available DNN models
+#dnn = DetectorTransformer()
+#dnn = MobileSSDDetector()
+dnn = YOLO()
 print("DONE!")
 
 # Mailer class
@@ -67,12 +65,10 @@ while(True):
     try:
         ret, frame = vid.read()
         if ret:
-            image = cv2.resize(frame, (800,600))
-
             if (end_time-start_time).total_seconds() > sampling_time:
                 start_time = end_time
 
-                image, peopleDetected = dnn.processFrame(image)
+                image, peopleDetected = dnn.processFrame(frame)
                 if(show_camera_preview):
                     cv2.imshow("preview", image)
 

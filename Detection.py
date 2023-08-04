@@ -5,10 +5,11 @@ import cv2
 import numpy as np
 import tensorflow.compat.v1 as tf
 import time
+import pandas
 
 class MobileSSDDetector:
-    def __init__(self, path_to_ckpt, threshold=0.8):
-        self.path_to_ckpt = path_to_ckpt
+    def __init__(self, path="./Models/mobileSSDModel.pb", threshold=0.8):
+        self.path_to_ckpt = path
         self.threshold = threshold
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
@@ -66,15 +67,23 @@ class MobileSSDDetector:
 
 
 class DetectorTransformer:
-    def __init__(self, threshold=0.8):
+    def __init__(self, threshold=0.8, image_size=640):
         self.processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
         self.model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50")
         self.threshold = threshold
+        self.image_size=image_size
+
+    def __preprocessing(self,image):
+        height, width, channels = image.shape
+        scale = self.image_size / width
+        image = cv2.resize(image, (self.image_size, (int)(height*scale)))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(image)
+        return image
 
     def processFrame(self, image):   
         peopleDetected = False 
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(image)
+        image = self.__preprocessing(image)
         inputs = self.processor(images=image, return_tensors="pt")
         outputs = self.model(**inputs)
 
@@ -92,3 +101,38 @@ class DetectorTransformer:
                 draw.text((box[0], box[1]-10), label, fill ="red")
 
         return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR), peopleDetected
+
+class YOLO:
+    def __init__(self, yolo_repo="ultralytics/yolov5", yolo_path="./Models/yolov5s.pt", threshold=0.8, image_size=640):
+        self.model = torch.hub.load(yolo_repo, "custom", path=yolo_path)
+        self.threshold = threshold
+        self.image_size = image_size
+
+    def __preprocessing(self,image):
+        height, width, channels = image.shape
+        scale = self.image_size / width
+        image = cv2.resize(image, (self.image_size, (int)(height*scale)))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(image)
+        return image
+    
+    def processFrame(self, image):
+        peopleDetected = False
+        image = self.__preprocessing(image)
+        
+        outputs = self.model([image], size=self.image_size)
+        
+        results = outputs.pandas().xyxy[0]
+        dt = pandas.DataFrame(results)
+        for row in dt.index:
+            score, label, box = dt['confidence'][row], dt['name'][row], [dt['xmin'][row], dt['ymin'][row], dt['xmax'][row], dt['ymax'][row]]
+            box = [round(i, 2) for i in box]
+            if(label == "person"):
+                peopleDetected = True
+                print(f"Detected {label} with confidence {round(score.item(), 3)} at location {box}")
+                draw=D.Draw(image)
+                draw.rectangle([(box[0],box[1]),(box[2],box[3])],outline="red",width=2)
+                draw.text((box[0], box[1]-10), label, fill ="red")
+        
+        return cv2.cvtColor(cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR), cv2.COLOR_BGR2RGB), peopleDetected
+
